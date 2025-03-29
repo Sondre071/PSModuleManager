@@ -1,8 +1,8 @@
-class SettingsManager {
+class DataManager {
     [string]$SettingsPath
-    [psobject]$Data
+    [psobject]$Settings
 
-    SettingsManager([string]$path) {
+    DataManager([string]$path) {
         $this.SettingsPath = $path
         $this.Load()
     }
@@ -13,24 +13,24 @@ class SettingsManager {
         }
 
         try {
-            $this.Data = Get-Content -Path $this.SettingsPath -Raw | ConvertFrom-Json -Depth 7
+            $this.Settings = Get-Content -Path $this.SettingsPath -Raw | ConvertFrom-Json -Depth 7
         }
         catch {
             throw "Failed to parse settings file: $_."
         }
     }
 
-    [void] Save() {
-        $this.Data | ConvertTo-Json -Depth 7 | Set-Content -Path $this.SettingsPath
+    [void] SaveSettings() {
+        $this.Settings | ConvertTo-Json -Depth 7 | Set-Content -Path $this.SettingsPath
     }
     
-    [void] Add($Key, $Value) {
-        $this.Data | Add-Member -MemberType NoteProperty -Name $Key -Value $Value -Force
+    [void] AddSetting($Key, $Value) {
+        $this.Settings | Add-Member -MemberType NoteProperty -Name $Key -Value $Value -Force
         $this.Save()
     }
 }
 
-function ModuleSettings($ModulePath) {
+function ModuleData($ModulePath) {
 
     $settingsPath = Join-Path -Path $ModulePath -ChildPath 'settings.json'
 
@@ -38,7 +38,7 @@ function ModuleSettings($ModulePath) {
         @{} | ConvertTo-Json -Depth 7 | Set-Content -Path $settingsPath -Encoding UTF8
     }
 
-    return [SettingsManager]::new($settingsPath)
+    return [DataManager]::new($settingsPath)
 }
 
-Export-ModuleMember -Function ModuleSettings
+Export-ModuleMember -Function ModuleData
