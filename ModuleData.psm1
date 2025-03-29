@@ -24,8 +24,28 @@ class DataManager {
         $this.FileContent | ConvertTo-Json -Depth 7 | Set-Content -Path $this.FilePath
     }
     
-    [void] Add($Key, $Value) {
-        $this.FileContent | Add-Member -MemberType NoteProperty -Name $Key -Value $Value -Force
+    [void] SetValue([string[]]$PathKeys, $Value) {
+
+        if (-not $PathKeys -or $PathKeys.Count -lt 1) { throw "SetValue requires a non-empty path-array."}
+        $currentObject = $this.FileContent
+
+        for ($i = 0; $i -lt $PathKeys.Count - 1; $i++) {
+            $key = $PathKeys[$i]
+
+            if (-not $currentObject.$Key) {
+                $currentObject | Add-Member -Membertype NoteProperty -Name $key -Value (@{}) -Force
+            }
+
+            if (($currentObject.$key -is [hashtable] -or $currentObject.$key -is [psobject])) {
+                throw "Error: key $key is not a hashtable or PSObject."
+            }
+
+            $currentObject = $currentObject.$key
+        }
+
+        $finalKey = $PathKeys[-1]
+        $currentObject | Add-Member -MemberType NoteProperty -Name $finalKey -Value $Value -Force
+
         $this.Save()
     }
 }
