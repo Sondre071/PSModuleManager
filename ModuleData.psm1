@@ -33,16 +33,16 @@ class DataManager {
 function ModuleData() {
     param (
         [Parameter(Mandatory = $true)]
-        [string]$ModulePath,
+        [string]$ScriptRoot,
 
         [Parameter(Mandatory = $true)]
         [string]$FileName
     )
 
-    if (-not $ModulePath) { throw "Missing module path." }
+    if (-not $ScriptRoot) { throw "Missing script root." }
     if (-not $FileName) { throw "Missing file name." }
 
-    $filePath = Join-Path -Path $ModulePath -ChildPath "$FileName.json"
+    $filePath = Join-Path -Path $ScriptRoot -ChildPath "$FileName.json"
 
     if (-not (Test-Path -Path $filePath)) {
         @{} | ConvertTo-Json -Depth 7 | Set-Content -Path $filePath -Encoding UTF8
