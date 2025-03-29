@@ -36,7 +36,7 @@ class DataManager {
                 $currentObject | Add-Member -Membertype NoteProperty -Name $key -Value (@{}) -Force
             }
 
-            if (($currentObject.$key -is [hashtable] -or $currentObject.$key -is [psobject])) {
+            if (-not ($currentObject.$key -is [hashtable] -or $currentObject.$key -is [psobject])) {
                 throw "Error: key $key is not a hashtable or PSObject."
             }
 
