@@ -1,8 +1,8 @@
-class DataManager {
+class ModuleManager {
     [string]$FilePath
     [psobject]$FileContent
 
-    DataManager([string]$path) {
+    ModuleManager([string]$path) {
         $this.FilePath = $path
         $this.Load()
     }
@@ -24,9 +24,9 @@ class DataManager {
         $this.FileContent | ConvertTo-Json -Depth 7 | Set-Content -Path $this.FilePath
     }
     
-    [void] SetValue([string[]]$PathKeys, $Value) {
+    [void] Set([string[]]$PathKeys, $Value) {
 
-        if (-not $PathKeys -or $PathKeys.Count -lt 1) { throw "SetValue requires a non-empty path-array."}
+        if (-not $PathKeys -or $PathKeys.Count -lt 1) { throw "PSModuleManager: Set() requires a non-empty path-array." }
         $currentObject = $this.FileContent
 
         for ($i = 0; $i -lt $PathKeys.Count - 1; $i++) {
@@ -48,9 +48,19 @@ class DataManager {
 
         $this.Save()
     }
+
+    [void] Get([string[]]$PathKeys) {
+
+        if (-not $PathKeys -or $PathKeys.Count -lt 1) { throw "PSModuleManager: Get() requires a non-empty path-array." }
+        $currentObject = $this.FileContent
+
+        # Work in progress
+
+    }
+
 }
 
-function ModuleData() {
+function PSModuleManager() {
     param (
         [Parameter(Mandatory = $true)]
         [string]$ScriptRoot,
@@ -68,7 +78,7 @@ function ModuleData() {
         @{} | ConvertTo-Json -Depth 7 | Set-Content -Path $filePath -Encoding UTF8
     }
 
-    return [DataManager]::new($filePath)
+    return [ModuleManager]::new($filePath)
 }
 
-Export-ModuleMember -Function ModuleData
+Export-ModuleMember -Function PSModuleManager
