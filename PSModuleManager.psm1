@@ -9,14 +9,14 @@ class ModuleManager {
 
     [void] Load() {
         if (-not (Test-Path -Path $this.FilePath)) {
-            throw "Config file not found at $($this.FilePath)."
+            throw "PSModuleManager: Load() failed to find config file at $($this.FilePath)."
         }
 
         try {
             $this.FileContent = Get-Content -Path $this.FilePath -Raw | ConvertFrom-Json -Depth 7
         }
         catch {
-            throw "Failed to parse file: $_."
+            throw "PSModuleManager: Load() failed to parse file: $_."
         }
     }
 
@@ -37,7 +37,7 @@ class ModuleManager {
             }
 
             if (-not ($currentObject.$key -is [hashtable] -or $currentObject.$key -is [psobject])) {
-                throw "Error: key $key is not a hashtable or PSObject."
+                throw "PSModuleManager: Set() failed to parse key $key as a hashtable or PSObject."
             }
 
             $currentObject = $currentObject.$key
@@ -51,10 +51,8 @@ class ModuleManager {
 
     [void] Get([string[]]$PathKeys) {
 
-        if (-not $PathKeys -or $PathKeys.Count -lt 1) { throw "PSModuleManager: Get() requires a non-empty path-array." }
+        if (-not $PathKeys -or $PathKeys.Count -lt 1) { throw "PSModuleManager: Get() was not provided a list of valid path keys." }
         $currentObject = $this.FileContent
-
-        # Work in progress
 
     }
 
@@ -69,8 +67,8 @@ function PSModuleManager() {
         [string]$FileName
     )
 
-    if (-not $ScriptRoot) { throw "Missing script root." }
-    if (-not $FileName) { throw "Missing file name." }
+    if (-not $ScriptRoot) { throw "PSModuleManager: Setup function not provided a PSScriptRoot." }
+    if (-not $FileName) { throw "PSModuleManager: Setup function not provided a file name." }
 
     $filePath = Join-Path -Path $ScriptRoot -ChildPath "$FileName.json"
 
