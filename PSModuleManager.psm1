@@ -27,7 +27,12 @@ class ModuleManager {
 
     [object] Get([string[]]$PathKeys, [switch]$Force) {
 
-        $this.ValidatePath($PathKeys, $Force)
+        if (-not ($PathKeys.Count -gt 1)) {
+            if (-not $Force) { $this.ValidateProperty($PathKeys[0]) }
+        }
+        else {
+            $this.ValidatePath($PathKeys, $Force)
+        }
 
         $currentObj = $this.FileContent 
 
@@ -40,18 +45,36 @@ class ModuleManager {
 
     [void] Set([string[]]$PathKeys, $Value, [switch]$Force) {
 
-        $this.ValidatePath($PathKeys, $Force)
+        if (-not ($PathKeys.Count -gt 1)) {
+            $key = $PathKeys[0]
+            if (-not $this.FileContent.$key) {
+                $this.FileContent | Add-Member -Membertype NoteProperty -Name $key -Value $Value -Force
+            }
+            $this.FileContent.$key = $Value
+        }
+        else {
+            $pathKeysWithoutLast = $PathKeys[0..($PathKeys.Count - 2)]
+            $this.ValidatePath($pathKeysWithoutLast, $Force)
 
-        $currentObj = $this.FileContent
 
-        for ($i = 0; $i -lt $PathKeys.Count - 1; $i++) {
-            $currentObj = $currentObj.$($PathKeys[$i])
+            $currentObj = $this.FileContent
+
+            for ($i = 0; $i -lt $PathKeys.Count - 1; $i++) {
+                $currentObj = $currentObj.$($PathKeys[$i])
+            }
+
+            $finalKey = $PathKeys[-1]
+            $currentObj.$finalKey = $Value
         }
 
-        $finalKey = $PathKeys[-1]
-        $currentObj.$finalKey = $Value
 
         $this.Save()
+    }
+
+    [void] ValidateProperty([string]$Property) {
+        if (-not ($this.FileContent.PSObject.Properties.Name -contains $Property)) {
+            throw "Property $Property does not exist on $($this.FilePath)."
+        }
     }
     
     [void] ValidatePath([string[]]$PathKeys, [switch]$Force) {
