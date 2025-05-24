@@ -1,9 +1,11 @@
 class ModuleManager {
     [string]$FilePath
     [psobject]$FileContent
+    [string]$ScriptRoot
 
-    ModuleManager([string]$path) {
+    ModuleManager([string]$path, [string]$scriptRoot) {
         $this.FilePath = $path
+        $this.ScriptRoot = $scriptRoot
         $this.Load()
     }
 
@@ -24,6 +26,18 @@ class ModuleManager {
         $this.FileContent | ConvertTo-Json -Depth 7 | Set-Content -Path $this.FilePath
     }
     
+    [object] GetFile([string]$Path) {
+        $content = Get-Content -Path (Join-Path -Path $this.ScriptRoot -ChildPath $Path) -Raw
+        return $content
+    }
+
+    [void] SetFile([string]$Path, $Value) {
+        $fullpath = Join-Path -Path $this.ScriptRoot -ChildPath $Path
+        if (-not (Test-Path -Path $fullpath)) {
+            New-Item -Path $fullPath -Force
+        }
+        Set-Content -Path $fullPath -Value $Value
+    }
 
     [object] Get([string[]]$PathKeys, [switch]$Force) {
 
@@ -56,7 +70,6 @@ class ModuleManager {
             $pathKeysWithoutLast = $PathKeys[0..($PathKeys.Count - 2)]
             $this.ValidatePath($pathKeysWithoutLast, $Force)
 
-
             $currentObj = $this.FileContent
 
             for ($i = 0; $i -lt $PathKeys.Count - 1; $i++) {
@@ -66,7 +79,6 @@ class ModuleManager {
             $finalKey = $PathKeys[-1]
             $currentObj.$finalKey = $Value
         }
-
 
         $this.Save()
     }
@@ -111,7 +123,7 @@ function PSModuleManager() {
         @{} | ConvertTo-Json -Depth 7 | Set-Content -Path $filePath -Encoding UTF8
     }
 
-    return [ModuleManager]::new($filePath)
+    return [ModuleManager]::new($filePath, $ScriptRoot)
 }
 
 Export-ModuleMember -Function PSModuleManager
