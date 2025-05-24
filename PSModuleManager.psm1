@@ -25,54 +25,48 @@ class ModuleManager {
     }
     
 
-    [psobject] Get([string[]]$PathKeys) {
+    [object] Get([string[]]$PathKeys, [switch]$Force) {
 
-        if (-not $PathKeys -or $PathKeys.Count -lt 1) { throw "An array of valid path keys not provided." }
-        $currentObject = $this.FileContent
+        $this.ValidatePath($PathKeys, $Force)
 
-        for ($i = 0; $i -lt $PathKeys.Count - 1; $i++) {
-            $key = $PathKeys[$i]
+        $currentObj = $this.FileContent 
 
-            if (-not $currentObject.$Key) {
-                $currentObject | Add-Member -Membertype NoteProperty -Name $key -Value (@{}) -Force
-            }
-
-            if (-not ($currentObject.$key -is [hashtable] -or $currentObject.$key -is [psobject])) {
-                throw "Failed to parse key: $key as a hashtable or PSObject."
-            }
-
-            $currentObject = $currentObject.$key
+        foreach ($key in $PathKeys) {
+            $currentObj = $currentObj.$key
         }
 
-        $finalKey = $PathKeys[-1]
-
-        return $currentObject.$finalKey
-
+        return $currentObj
     }
 
-    [void] Set([string[]]$PathKeys, $Value) {
+    [void] Set([string[]]$PathKeys, $Value, [switch]$Force) {
 
-        if (-not $PathKeys -or $PathKeys.Count -lt 1) { throw "An array of valid path keys not provided." }
-        $currentObject = $this.FileContent
+        $this.ValidatePath($PathKeys, $Force)
+
+        $currentObj = $this.FileContent
 
         for ($i = 0; $i -lt $PathKeys.Count - 1; $i++) {
-            $key = $PathKeys[$i]
-
-            if (-not $currentObject.$Key) {
-                $currentObject | Add-Member -Membertype NoteProperty -Name $key -Value (@{}) -Force
-            }
-
-            if (-not ($currentObject.$key -is [hashtable] -or $currentObject.$key -is [psobject])) {
-                throw "Failed to parse key: $key as a hashtable or PSObject."
-            }
-
-            $currentObject = $currentObject.$key
+            $currentObj = $currentObj.$($PathKeys[$i])
         }
 
         $finalKey = $PathKeys[-1]
-        $currentObject | Add-Member -MemberType NoteProperty -Name $finalKey -Value $Value -Force
+        $currentObj.$finalKey = $Value
 
         $this.Save()
+    }
+    
+    [void] ValidatePath([string[]]$PathKeys, [switch]$Force) {
+        $currentObj = $this.FileContent
+
+        foreach ($key in $PathKeys) {
+            if ($Force -and -not $currentObj.$key) {
+                $currentObj | Add-Member -Membertype NoteProperty -Name $key -Value (@{}) -Force
+            }
+            elseif (-not ($currentObj.$key -is [hashtable] -or $currentObj.$key -is [psobject] -or $currentObj.$key -is [array])) {
+                throw "Failed to parse key: $key as a hashtable, PSObject or array."
+            }
+
+            $currentObj = $currentObj.$key
+        }
     }
 }
 
