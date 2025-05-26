@@ -39,6 +39,13 @@ class ModuleManager {
         Set-Content -Path $fullPath -Value $Value
     }
 
+    [string[]] GetFileNames([string]$Path) {
+        $fullpath = Join-Path -Path $this.ScriptRoot -ChildPath $Path
+        $fileNames = (Get-ChildItem -Path $fullPath -File) | ForEach-Object { $_.BaseName }
+
+        return $fileNames
+    }
+
     [object] Get([string[]]$PathKeys, [switch]$Force) {
 
         if (-not ($PathKeys.Count -gt 1)) {
