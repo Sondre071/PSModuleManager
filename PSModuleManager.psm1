@@ -43,7 +43,7 @@ function PSModuleManager() {
     if (-not ($FilePath -match ".json$")) { throw "File must be of type JSON." }
 
     if (-not (Test-Path $FilePath)) {
-        if ($InitialJSONContent.GetType().Name -eq 'string') {
+        if ($InitialJSONContent -ne '') {
             $content = $InitialJSONContent | ConvertFrom-Json -Depth 7 | ConvertTo-Json -Depth 7 -Compress
             Set-Content -Path $filePath -Value $content -Encoding UTF8
         }
