@@ -1,36 +1,3 @@
-class ModuleManager {
-    [string]$FilePath
-    [pscustomobject]$FileContent
-
-    ModuleManager([string]$Path) {
-        $this.FilePath = $Path
-        $this.Load()
-    }
-
-    [void] Load() {
-        if (-not (Test-Path -Path $this.FilePath)) {
-            throw "No file found at path: `'$($this.FilePath)`'."
-        }
-
-        try {
-            $this.FileContent = Get-Content -Path $this.FilePath -Raw | ConvertFrom-Json -Depth 7
-
-            Write-Debug "Loaded file path: $($this.FilePath)"
-            Write-Debug "Loaded content: $($this.FileContent)"
-        }
-        catch {
-            throw "Failed to parse file: $_."
-        }
-    }
-
-    [void] Save() {
-        $this.FileContent | ConvertTo-Json -Depth 7 | Set-Content -Path $this.FilePath
-
-        Write-Debug "Saved to file path: `'$($this.FilePath).`'"
-        Write-Debug "Saved content: `'$($this.FileContent)`'."
-    }
-}
-
 function PSModuleManager() {
     param (
         [Parameter(Mandatory = $true)]
@@ -48,14 +15,25 @@ function PSModuleManager() {
             Set-Content -Path $filePath -Value $content -Encoding UTF8
         }
         else {
-            throw 'Invalid file path. No JSON provided as initial file content.'
+            throw 'No JSON provided to populate initial file.'
         }
     }
 
-    $currentFile = Split-Path $PSCommandPath -Leaf
-    Write-Debug "Initializing $currentFile"
+    $obj = (Get-Content -Path $FilePath) | ConvertFrom-Json -Depth 5 -AsHashTable
 
-    return [ModuleManager]::new($FilePath)
+    if ($obj.PSObject.Properties.Name.Contains('Save')) {
+        throw "JSON cannot contain a property named `'Save`' at root level."
+    }
+
+    $obj | Add-Member -Membertype NoteProperty -Name _savePath -Value $FilePath
+
+    $obj | Add-Member -MemberType ScriptMethod -Name Save -Value {
+        $json = ($this | Select-Object -ExcludeProperty _savePath | ConvertTo-Json -Depth 7)
+
+        Set-Content -Path $this._savePath -Value $json
+    }
+
+    return $obj
 }
 
 Export-ModuleMember -Function PSModuleManager
